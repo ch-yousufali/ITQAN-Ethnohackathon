@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-source-serif), ui-serif, Georgia, serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+@theme {
+  /* Surfaces */
+  --color-paper: #fafaf6;
+  --color-surface: #ffffff;
+  --color-subtle: #f3f4ee;
+  --color-line: #e6e8e0;
+  --color-line-strong: #d3d6cb;
+
+  /* Text */
+  --color-ink: #1b2620;
+  --color-body: #47534c;
+  --color-muted: #5f6a63;
+
+  /* Botanical green accent */
+  --color-leaf: #2f6b4f;
+  --color-leaf-dark: #24543e;
+  --color-leaf-soft: #e9f1ea;
+
+  /* Status */
+  --color-danger: #a33a2c;
+  --color-danger-soft: #fbefec;
+  --color-warn: #8a5a00;
+  --color-warn-soft: #fbf4e2;
+  --color-warn-line: #ecdcb0;
+
+  /* Evidence categories (PRD section 2) */
+  --color-measured: #1d7a46;
+  --color-measured-soft: #e6f4ea;
+  --color-curated: #1f5fbf;
+  --color-curated-soft: #e8f0fc;
+  --color-inferred: #8a5000;
+  --color-inferred-soft: #fcf1dc;
+  --color-predicted: #6d3fc4;
+  --color-predicted-soft: #f0eafb;
+}
+
+html {
+  background: var(--color-paper);
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "cv11", "ss03";
+}
+
+/* In a layer, so components can refine their focus style with utilities. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--color-leaf);
+    outline-offset: 2px;
+  }
+}
+
+::selection {
+  background: var(--color-leaf-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
