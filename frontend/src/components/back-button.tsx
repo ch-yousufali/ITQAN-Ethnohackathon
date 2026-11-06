@@ -1,10 +1,12 @@
 "use client";
 
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const SECTIONS: Record<string, { list: string; item: string }> = {
+  dashboard: { list: "Dashboard", item: "Dashboard" },
   formulations: { list: "Formulations", item: "Formulation" },
   manuscripts: { list: "Manuscripts", item: "Manuscript" },
   plants: { list: "Plants", item: "Plant" },
@@ -16,7 +18,7 @@ const SECTIONS: Record<string, { list: string; item: string }> = {
 
 function labelFor(url: string) {
   const [section, id, action] = url.split("?")[0].split("/").filter(Boolean);
-  if (!section) return "Overview";
+  if (!section) return "Home";
   const names = SECTIONS[section];
   if (!names) return "Previous page";
   if (id === "new") return "New formulation";
@@ -27,12 +29,12 @@ function labelFor(url: string) {
 /** Where to go when this page was opened directly, so there is no previous page in the app. */
 function parentOf(pathname: string) {
   if (pathname.startsWith("/compounds/")) return "/plants";
-  return pathname.slice(0, pathname.lastIndexOf("/")) || "/";
+  return pathname.slice(0, pathname.lastIndexOf("/")) || "/dashboard";
 }
 
 /**
  * Returns to the page the user actually came from. A page opened directly, such
- * as from a shared link, links to its parent instead. The home page has no
+ * as from a shared link, links to its parent instead. The dashboard has no
  * parent, so it shows nothing until the user has somewhere to return to.
  */
 export function BackButton() {
@@ -65,21 +67,24 @@ export function BackButton() {
     setNav({ stack: wentBack ? nav.stack.slice(0, -1) : [...nav.stack, url], popped: false });
   }
 
-  const className = "mb-4 inline-block text-sm text-muted hover:text-ink";
+  const className = "mb-4 inline-flex items-center gap-2 font-label text-[11px] tracking-[0.15em] text-muted uppercase hover:text-ink";
+  const arrow = <ArrowLeft className="size-3.5 shrink-0" strokeWidth={1.5} aria-hidden />;
   const previous = nav.stack[nav.stack.length - 2];
 
   if (previous !== undefined) {
     return (
       <button type="button" onClick={() => router.back()} className={`${className} cursor-pointer`}>
-        ← {labelFor(previous)}
+        {arrow}
+        {labelFor(previous)}
       </button>
     );
   }
-  if (pathname === "/") return null;
+  if (pathname === "/dashboard") return null;
   const parent = parentOf(pathname);
   return (
     <Link href={parent} className={className}>
-      ← {labelFor(parent)}
+      {arrow}
+      {labelFor(parent)}
     </Link>
   );
 }

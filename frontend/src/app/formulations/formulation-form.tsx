@@ -109,7 +109,7 @@ export function FormulationForm({ formulation }: { formulation?: Formulation }) 
       </div>
 
       <fieldset>
-        <legend className="text-base font-semibold tracking-tight">Ingredients</legend>
+        <legend className="font-display text-3xl">Ingredients</legend>
         <p className="mt-1 mb-4 text-sm text-muted">
           Leave the botanical identification empty if unknown. It will be reported as missing data, not guessed.
         </p>

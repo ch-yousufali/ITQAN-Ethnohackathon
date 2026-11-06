@@ -1,7 +1,7 @@
 "use client";
 
 import { createColumnHelper } from "@tanstack/react-table";
-import { Loader2, Network } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2, Network } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -25,8 +25,8 @@ const columns: Columns<Finding> = [
       return (
         <Link href={`/findings/${f.id}`} onClick={(e) => e.stopPropagation()} className="group block md:min-w-52">
           <span className="font-medium group-hover:text-leaf">
-            {f.compound_a.name} <span className="font-normal text-muted">→</span> {f.target.symbol}{" "}
-            <span className="font-normal text-muted">←</span> {f.compound_b.name}
+            {f.compound_a.name} <ArrowRight aria-label="acts on" className="inline size-3.5 align-[-2px] text-muted" strokeWidth={1.5} /> {f.target.symbol}{" "}
+            <ArrowLeft aria-label="also acted on by" className="inline size-3.5 align-[-2px] text-muted" strokeWidth={1.5} /> {f.compound_b.name}
           </span>
           <span className="mt-0.5 block text-[13px] text-muted">
             <Botanical>{f.compound_a.botanical_name}</Botanical> · <Botanical>{f.compound_b.botanical_name}</Botanical>
@@ -192,8 +192,8 @@ export function FindingsView() {
               <ErrorState title="Analysis not found" error={new Error("That analysis could not be found. Choose another from History.")} />
             ) : (
               <>
-                <div className="mb-6 max-w-md">
-                  <label htmlFor="analysis" className="mb-1.5 block text-sm font-medium">Analysis</label>
+                <div className="mb-10 max-w-md">
+                  <label htmlFor="analysis" className="mb-2 block font-label text-[11px] font-normal tracking-[0.15em] text-ochre uppercase">Analysis</label>
                   <Select
                     id="analysis"
                     value={current.id}

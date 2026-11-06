@@ -23,7 +23,7 @@ export function CompoundDetail({ compound: c }: { compound: Compound }) {
         </dl>
 
         <div>
-          <h3 className="text-sm font-semibold">Biological targets</h3>
+          <h3 className="font-display text-xl">Biological targets</h3>
           {c.targets.length === 0 ? (
             <p className="mt-1 text-sm text-warn">No known targets on record. This reflects missing data, not proven inactivity.</p>
           ) : (
@@ -43,7 +43,7 @@ export function CompoundDetail({ compound: c }: { compound: Compound }) {
         </div>
 
         <div>
-          <h3 className="text-sm font-semibold">Compound references</h3>
+          <h3 className="font-display text-xl">Compound references</h3>
           <div className="mt-1"><SourceList sources={c.references} /></div>
         </div>
       </div>

@@ -128,7 +128,7 @@ function Explorer({ graph }: { graph: Graph }) {
         </div>
 
         <fieldset>
-          <legend className="mb-2 text-[13px] font-medium text-muted">Show nodes</legend>
+          <legend className="mb-3 font-label text-[11px] font-normal tracking-[0.15em] text-ochre uppercase">Show nodes</legend>
           <div className="space-y-1.5">
             {NODE_TYPES.map((t) => (
               <label key={t} className="flex cursor-pointer items-center gap-2.5 text-sm">
@@ -141,7 +141,7 @@ function Explorer({ graph }: { graph: Graph }) {
         </fieldset>
 
         <fieldset>
-          <legend className="mb-2 text-[13px] font-medium text-muted">Show evidence links</legend>
+          <legend className="mb-3 font-label text-[11px] font-normal tracking-[0.15em] text-ochre uppercase">Show evidence links</legend>
           <div className="space-y-1.5">
             {EVIDENCE_CATEGORIES.map((c) => (
               <label key={c} className="flex cursor-pointer items-center gap-2.5 text-sm">
@@ -170,7 +170,7 @@ function Explorer({ graph }: { graph: Graph }) {
             </div>
           }
         >
-          <div className="relative h-[60vh] min-h-[26rem] overflow-hidden rounded-xl border border-line bg-white lg:h-[40rem]">
+          <div className="relative h-[60vh] min-h-[26rem] overflow-hidden rounded-xl border border-line bg-surface lg:h-[40rem]">
             <GraphCanvas
               graph={visible}
               selectedId={selectedId}
@@ -180,7 +180,7 @@ function Explorer({ graph }: { graph: Graph }) {
                 setSelectedId(null);
               }}
             />
-            <p className="pointer-events-none absolute bottom-3 left-3 hidden rounded-md bg-white/90 px-2 py-1 text-[13px] text-muted sm:block">
+            <p className="pointer-events-none absolute bottom-3 left-3 hidden rounded-md bg-surface/90 px-2 py-1 text-[13px] text-muted sm:block">
               Drag to rotate · Scroll to zoom · Click a node or link
             </p>
           </div>
@@ -193,12 +193,12 @@ function Explorer({ graph }: { graph: Graph }) {
                 {node ? (
                   <>
                     <p className="text-[13px] text-muted capitalize">{node.type}</p>
-                    <p className="text-sm font-semibold">
+                    <p className="text-sm font-medium">
                       {node.type === "plant" ? <Botanical>{node.label}</Botanical> : node.label}
                     </p>
                   </>
                 ) : (
-                  <p className="text-sm font-semibold">Relationship</p>
+                  <p className="text-sm font-medium">Relationship</p>
                 )}
               </div>
               <div className="flex shrink-0 items-center gap-1">

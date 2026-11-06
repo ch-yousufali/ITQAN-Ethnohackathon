@@ -33,13 +33,15 @@ export function PlantDetailView() {
   const initial = useSearchParams().get("compound");
   const query = usePlant(id);
   const [open, setOpen] = useState<string | null>(initial);
+  // A compound is only fetched once it's first opened. It then stays mounted, so it can animate closed.
+  const [opened, setOpened] = useState<string[]>(initial ? [initial] : []);
 
   return (
     <QueryView query={query}>
       {(p) => (
         <>
           <PageHeader
-            title={<Botanical className="font-medium">{p.botanical_name}</Botanical>}
+            title={<Botanical>{p.botanical_name}</Botanical>}
             description={p.description ?? undefined}
           />
 
@@ -64,7 +66,10 @@ export function PlantDetailView() {
                       <button
                         type="button"
                         aria-expanded={expanded}
-                        onClick={() => setOpen(expanded ? null : c.id)}
+                        onClick={() => {
+                          setOpen(expanded ? null : c.id);
+                          if (!opened.includes(c.id)) setOpened([...opened, c.id]);
+                        }}
                         className="flex w-full items-center justify-between gap-4 px-4 py-3.5 text-left hover:bg-paper sm:px-5"
                       >
                         <span className="min-w-0">
@@ -73,9 +78,20 @@ export function PlantDetailView() {
                             {c.formula ?? "Formula not available"} · {c.target_count} target{c.target_count === 1 ? "" : "s"}
                           </span>
                         </span>
-                        <ChevronDown className={`size-4 shrink-0 text-muted transition-transform ${expanded ? "rotate-180" : ""}`} aria-hidden />
+                        <ChevronDown
+                          className={`size-4 shrink-0 text-muted transition-transform delay-100 duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] ${expanded ? "rotate-180" : ""}`}
+                          aria-hidden
+                        />
                       </button>
-                      {expanded && <ExpandedCompound compoundId={c.id} />}
+                      <div
+                        className={`grid transition-[grid-template-rows] delay-100 duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] ${
+                          expanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                        }`}
+                      >
+                        <div inert={!expanded} className="min-h-0 overflow-hidden">
+                          {opened.includes(c.id) && <ExpandedCompound compoundId={c.id} />}
+                        </div>
+                      </div>
                     </div>
                   );
                 })}

@@ -70,7 +70,7 @@ export function FormulationDetailView() {
               <div className="overflow-x-auto rounded-xl border border-line bg-surface">
                 <table className="w-full text-left text-sm">
                   <thead>
-                    <tr className="border-b border-line text-[13px] text-muted">
+                    <tr className="border-b border-line font-label text-[11px] font-normal tracking-[0.15em] text-ochre uppercase">
                       <th scope="col" className="px-4 py-3 font-medium">Traditional name</th>
                       <th scope="col" className="px-4 py-3 font-medium">Botanical name</th>
                       <th scope="col" className="hidden px-4 py-3 font-medium md:table-cell">Part used</th>

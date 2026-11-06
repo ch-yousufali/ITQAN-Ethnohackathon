@@ -40,7 +40,7 @@ export function Structure({ smiles, name }: { smiles: string | null; name: strin
   }
   return (
     <figure className="w-full sm:w-60">
-      <svg ref={svg} role="img" aria-label={`2D structure of ${name}`} className="h-44 w-full rounded-lg border border-line bg-white" />
+      <svg ref={svg} role="img" aria-label={`2D structure of ${name}`} className="h-44 w-full rounded-lg border border-line bg-surface" />
     </figure>
   );
 }

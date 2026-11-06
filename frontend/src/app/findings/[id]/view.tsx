@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { EVIDENCE_META, EvidenceBadge, Notice, SourceList, isComputationalOnly, isTraceable } from "@/components/evidence";
@@ -12,7 +12,7 @@ import type { EvidenceItem, Finding } from "@/lib/api/schemas";
 function CompoundCard({ c }: { c: Finding["compound_a"] }) {
   return (
     <Link href={`/compounds/${c.id}`} className="block rounded-lg border border-line bg-surface p-4 text-center hover:border-leaf">
-      <span className="block text-sm font-semibold">{c.name}</span>
+      <span className="block text-sm font-medium">{c.name}</span>
       <Botanical className="text-[13px] text-muted">{c.botanical_name}</Botanical>
     </Link>
   );
@@ -23,13 +23,13 @@ function Diagram({ finding: f }: { finding: Finding }) {
     <Panel className="mb-10 bg-paper p-4 sm:p-6">
       <div className="grid items-center gap-2 md:grid-cols-[1fr_auto_1fr_auto_1fr] md:gap-3">
         <CompoundCard c={f.compound_a} />
-        <span aria-hidden className="text-center text-xl text-muted max-md:rotate-90">→</span>
+        <ArrowRight aria-hidden strokeWidth={1.5} className="mx-auto size-5 text-muted max-md:rotate-90" />
         <div className="rounded-lg bg-leaf-soft p-4 text-center">
-          <span className="block text-[13px] text-leaf-dark">Shared target</span>
-          <span className="block text-sm font-semibold">{f.target.symbol}</span>
+          <span className="mb-1 block font-label text-[11px] font-normal tracking-[0.15em] text-ochre uppercase">Shared target</span>
+          <span className="block text-sm font-medium">{f.target.symbol}</span>
           <span className="block text-[13px] text-body">{f.target.name}</span>
         </div>
-        <span aria-hidden className="text-center text-xl text-muted max-md:rotate-90">←</span>
+        <ArrowLeft aria-hidden strokeWidth={1.5} className="mx-auto size-5 text-muted max-md:rotate-90" />
         <CompoundCard c={f.compound_b} />
       </div>
       {f.pathways.length > 0 && (

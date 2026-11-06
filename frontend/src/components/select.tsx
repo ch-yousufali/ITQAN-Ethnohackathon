@@ -160,7 +160,7 @@ export function Select({
             <span className="text-muted">{placeholder}</span>
           )}
         </span>
-        <ChevronDown className={`size-4 shrink-0 text-muted ${open ? "rotate-180" : ""}`} aria-hidden />
+        <ChevronDown className={`size-4 shrink-0 text-muted transition-transform duration-300 ${open ? "rotate-180" : ""}`} aria-hidden />
       </button>
 
       {open && (
@@ -170,8 +170,8 @@ export function Select({
           role="listbox"
           aria-label={ariaLabel}
           style={{ maxHeight: POPUP_MAX_HEIGHT }}
-          className={`absolute right-0 left-0 z-20 min-w-full overflow-y-auto rounded-lg border border-line bg-surface p-1 shadow-[0_8px_24px_rgb(27_38_32/0.1)] ${
-            above ? "bottom-full mb-1" : "top-full mt-1"
+          className={`absolute right-0 left-0 z-20 min-w-full animate-pop overflow-y-auto rounded-lg border border-line bg-surface p-1 shadow-[0_8px_24px_rgb(27_38_32/0.1)] ${
+            above ? "bottom-full mb-1 origin-bottom" : "top-full mt-1 origin-top"
           }`}
         >
           {options.map((option, i) => {

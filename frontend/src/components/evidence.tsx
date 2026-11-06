@@ -41,7 +41,7 @@ export const EVIDENCE_META: Record<
 };
 
 /** A distinct shape per category, so meaning never depends on colour alone. */
-function EvidenceGlyph({ category }: { category: EvidenceCategory }) {
+export function EvidenceGlyph({ category }: { category: EvidenceCategory }) {
   const shape = {
     MEASURED: <circle cx="5" cy="5" r="4" fill="currentColor" />,
     CURATED: <rect x="1.5" y="1.5" width="7" height="7" rx="1" fill="currentColor" />,
@@ -60,7 +60,7 @@ export function EvidenceBadge({ category }: { category: EvidenceCategory }) {
   return (
     <span
       title={meta.description}
-      className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-semibold tracking-wide ${meta.text} ${meta.bg}`}
+      className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 font-label text-[10px] tracking-[0.12em] ${meta.text} ${meta.bg}`}
     >
       <EvidenceGlyph category={category} />
       {category}
@@ -134,9 +134,9 @@ export function Notice({
   const styles = tone === "warn" ? "border-warn-line bg-warn-soft text-warn" : "border-line bg-subtle text-body";
   return (
     <div className={`flex gap-2.5 rounded-lg border px-4 py-3 text-sm leading-relaxed ${styles}`}>
-      <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
+      <AlertTriangle className="mt-1 size-4 shrink-0" aria-hidden />
       <div className="min-w-0">
-        {title && <p className="font-semibold">{title}</p>}
+        {title && <p className="font-medium">{title}</p>}
         <div>{children}</div>
       </div>
     </div>
@@ -159,26 +159,27 @@ export function CoverageSummary({ coverage }: { coverage: Coverage | null }) {
   ];
   return (
     <div className="rounded-xl border border-line bg-surface p-5">
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:gap-10">
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:gap-10">
         <div className="lg:w-56 lg:shrink-0">
-          <p className="text-[13px] text-muted">Molecular data coverage</p>
-          <p className="mt-0.5 text-2xl font-semibold tracking-tight tabular-nums">{formatPercent(coverage.ratio)}</p>
+          <p className="font-label text-[11px] font-normal tracking-[0.15em] text-ochre uppercase">Molecular data coverage</p>
+          <p className="mt-2 font-display text-4xl leading-none tabular-nums">{formatPercent(coverage.ratio)}</p>
           <div
             role="meter"
             aria-label="Molecular data coverage"
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={Math.round(coverage.ratio * 100)}
-            className="mt-2 h-1.5 overflow-hidden rounded-full bg-subtle"
+            className="mt-3 h-1.5 overflow-hidden rounded-full bg-subtle"
           >
-            <div className="h-full rounded-full bg-leaf" style={{ width: `${coverage.ratio * 100}%` }} />
+            <div className="h-full origin-left animate-grow rounded-full bg-leaf" style={{ width: `${coverage.ratio * 100}%` }} />
           </div>
         </div>
         <dl className="grid flex-1 gap-4 sm:grid-cols-3">
           {stats.map((s) => (
-            <div key={s.label}>
-              <dt className="text-[13px] text-muted">{s.label}</dt>
-              <dd className="mt-0.5 text-sm font-medium tabular-nums">{s.value}</dd>
+            <div key={s.label} className="flex flex-col">
+              <dt className="font-label text-[11px] font-normal tracking-[0.15em] text-ochre uppercase">{s.label}</dt>
+              {/* Pushed down, so values stay level when a label wraps. */}
+              <dd className="mt-auto pt-2 font-display text-4xl leading-none tabular-nums">{s.value}</dd>
             </div>
           ))}
         </dl>

@@ -17,9 +17,9 @@ const WORKFLOW = [
 
 function Stat({ label, value }: { label: string; value: number | undefined }) {
   return (
-    <div className="px-5 py-4 sm:px-6 sm:py-5">
-      <dt className="text-[13px] text-muted">{label}</dt>
-      <dd className="mt-1 text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl">
+    <div className="flex flex-col px-5 py-4 sm:px-6 sm:py-5">
+      <dt className="font-label text-[11px] tracking-[0.15em] text-ochre uppercase">{label}</dt>
+      <dd className="mt-auto pt-2 font-display text-5xl leading-none tabular-nums sm:text-6xl">
         {value ?? <span className="text-line-strong">–</span>}
       </dd>
     </div>
@@ -40,10 +40,10 @@ export function DashboardView() {
     <>
       <div className="mb-10 flex flex-col gap-6 sm:mb-12 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="max-w-2xl text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+          <h1 className="max-w-3xl font-display text-[clamp(40px,5vw,72px)] leading-[1.05] text-balance">
             From ancient formulation to molecular evidence
           </h1>
-          <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-body">
+          <p className="mt-3 max-w-xl text-[17px] leading-relaxed text-body">
             Digitise polyherbal manuscripts, verify their ingredients, and explore candidate molecular
             relationships with every claim traced to its source.
           </p>
@@ -83,7 +83,7 @@ export function DashboardView() {
       <div className="grid grid-cols-1 gap-x-10 lg:grid-cols-2">
         <Section
           title="Recent formulations"
-          actions={<Link href="/formulations" className="text-sm text-leaf hover:underline">View all</Link>}
+          actions={<Link href="/formulations" className="font-label text-[11px] tracking-[0.15em] text-vermillion uppercase hover:underline">View all</Link>}
         >
           <QueryView query={formulations} rows={3}>
             {(data) =>
@@ -116,7 +116,7 @@ export function DashboardView() {
 
         <Section
           title="Recent analyses"
-          actions={<Link href="/analyses" className="text-sm text-leaf hover:underline">View all</Link>}
+          actions={<Link href="/analyses" className="font-label text-[11px] tracking-[0.15em] text-vermillion uppercase hover:underline">View all</Link>}
         >
           <QueryView query={analyses} rows={3}>
             {(data) =>
@@ -157,8 +157,8 @@ export function DashboardView() {
           {WORKFLOW.map((step, i) => (
             <li key={step.title} className="bg-surface">
               <Link href={step.href} className="group block h-full p-5 hover:bg-paper">
-                <span className="text-[13px] text-muted tabular-nums">Step {i + 1}</span>
-                <span className="mt-1 flex items-center gap-1.5 text-sm font-semibold">
+                <span className="font-label text-[11px] tracking-[0.15em] text-ochre uppercase tabular-nums">Step {i + 1}</span>
+                <span className="mt-2 flex items-center gap-1.5 font-display text-2xl">
                   {step.title}
                   <ArrowRight className="size-3.5 opacity-0 transition-opacity group-hover:opacity-100" aria-hidden />
                 </span>

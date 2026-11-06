@@ -90,7 +90,7 @@ export default function GraphCanvas({
           width={size.width}
           height={size.height}
           graphData={data}
-          backgroundColor="#ffffff"
+          backgroundColor="#f7f2e4"
           showNavInfo={false}
           nodeId="id"
           nodeLabel={() => ""}
@@ -98,11 +98,11 @@ export default function GraphCanvas({
           nodeRelSize={2}
           nodeOpacity={0.95}
           nodeResolution={16}
-          nodeColor={(n) => (dimmed(n.id) ? "#e6e8e0" : NODE_COLORS[n.type])}
+          nodeColor={(n) => (dimmed(n.id) ? "#dccdaa" : NODE_COLORS[n.type])}
           nodeThreeObjectExtend
           nodeThreeObject={(n) => {
             const label = new SpriteText(n.label);
-            label.color = dimmed(n.id) ? "#c5c9bd" : "#1b2620";
+            label.color = dimmed(n.id) ? "#c4ae82" : "#1c1612";
             label.textHeight = n.id === selectedId ? 5.5 : 4.5;
             label.fontFace = "Inter, sans-serif";
             label.fontWeight = n.id === selectedId ? "600" : "400";
@@ -110,7 +110,7 @@ export default function GraphCanvas({
             return label;
           }}
           linkColor={(l) =>
-            dimmed(nodeId(l.source)) || dimmed(nodeId(l.target)) ? "#eef0e9" : l.category ? EVIDENCE_META[l.category].hex : "#c3c8bb"
+            dimmed(nodeId(l.source)) || dimmed(nodeId(l.target)) ? "#e8dfc8" : l.category ? EVIDENCE_META[l.category].hex : "#b8a57e"
           }
           linkWidth={(l) => (l.category ? 0.9 : 0.4)}
           linkOpacity={0.85}

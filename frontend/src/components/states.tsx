@@ -23,7 +23,7 @@ export function ErrorState({ error, onRetry, title }: { error: unknown; onRetry?
   return (
     <div role="alert" className="rounded-xl border border-line bg-surface px-6 py-12 text-center">
       <AlertCircle className="mx-auto size-6 text-danger" aria-hidden />
-      <h2 className="mt-3 text-base font-semibold">{title ?? (notFound ? "Not found" : "Could not load this")}</h2>
+      <h2 className="mt-3 font-display text-2xl">{title ?? (notFound ? "Not found" : "Could not load this")}</h2>
       <p className="mx-auto mt-1 max-w-md text-sm leading-relaxed text-body">{message}</p>
       {onRetry && !notFound && (
         <Button variant="secondary" className="mt-4" onClick={onRetry}>
@@ -45,7 +45,7 @@ export function EmptyState({
 }) {
   return (
     <div className="rounded-xl border border-dashed border-line-strong px-6 py-12 text-center">
-      <h3 className="text-base font-semibold">{title}</h3>
+      <h3 className="font-display text-2xl">{title}</h3>
       {children && <p className="mx-auto mt-1 max-w-md text-sm leading-relaxed text-body">{children}</p>}
       {action && <div className="mt-4">{action}</div>}
     </div>
@@ -64,5 +64,5 @@ export function QueryView<T>({
 }) {
   if (query.isPending) return <LoadingState rows={rows} />;
   if (query.isError) return <ErrorState error={query.error} onRetry={() => query.refetch()} />;
-  return <>{children(query.data)}</>;
+  return <div className="animate-fade-in">{children(query.data)}</div>;
 }

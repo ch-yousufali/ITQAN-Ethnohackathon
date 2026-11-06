@@ -4,25 +4,29 @@
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-source-serif), ui-serif, Georgia, serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Loaded by the root layout. */
+  --font-display: var(--font-gilda), var(--font-source-serif), ui-serif, Georgia, serif;
+  --font-label: var(--font-azeret), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 @theme {
   /* Surfaces */
-  --color-paper: #fafaf6;
-  --color-surface: #ffffff;
-  --color-subtle: #f3f4ee;
-  --color-line: #e6e8e0;
-  --color-line-strong: #d3d6cb;
+  --color-paper: #f2eada;
+  --color-surface: #f7f2e4;
+  --color-subtle: #ede4cc;
+  --color-line: #dccdaa;
+  --color-line-strong: #c4ae82;
 
   /* Text */
-  --color-ink: #1b2620;
-  --color-body: #47534c;
-  --color-muted: #5f6a63;
+  --color-ink: #1c1612;
+  --color-body: #3d382f;
+  --color-muted: #5e5546;
 
   /* Botanical green accent */
-  --color-leaf: #2f6b4f;
-  --color-leaf-dark: #24543e;
-  --color-leaf-soft: #e9f1ea;
+  --color-leaf: #1a4d2e;
+  --color-leaf-dark: #133a22;
+  --color-leaf-soft: #e3e3bd;
 
   /* Status */
   --color-danger: #a33a2c;
@@ -40,6 +44,59 @@
   --color-inferred-soft: #fcf1dc;
   --color-predicted: #6d3fc4;
   --color-predicted-soft: #f0eafb;
+
+  /* Sharp corners everywhere. rounded-full is untouched, for dots and progress bars. */
+  --radius-xs: 0;
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
+  --radius-2xl: 0;
+
+  --color-forest: #1a4d2e;
+  --color-parchment: #f2eada;
+  --color-cream: #ede4cc;
+  --color-citron: #c8d400;
+  --color-citron-dark: #b0ba00;
+  --color-vermillion: #b83a1a;
+  --color-ochre: #8b5e0a;
+
+  --animate-wipe-left: wipe-left 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-wipe-right: wipe-right 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-title-in: title-in 1.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-rise: rise 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  /* Fill "backwards" only: nothing stays applied afterwards, so popups stack normally. */
+  --animate-page-in: rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  --animate-fade-in: fade-in 0.6s ease-out backwards;
+  --animate-pop: pop 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  --animate-grow: grow 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) 0.2s backwards;
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+  }
+  @keyframes pop {
+    from { opacity: 0; scale: 0.97; }
+  }
+  @keyframes grow {
+    from { scale: 0 1; }
+  }
+
+  @keyframes wipe-left {
+    from { clip-path: inset(0 100% 0 0); }
+    to { clip-path: inset(0 0 0 0); }
+  }
+  @keyframes wipe-right {
+    from { clip-path: inset(0 0 0 100%); }
+    to { clip-path: inset(0 0 0 0); }
+  }
+  @keyframes title-in {
+    from { opacity: 0; letter-spacing: 0.2em; }
+    to { opacity: 1; letter-spacing: 0.02em; }
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 }
 
 html {
@@ -55,9 +112,27 @@ body {
 
 /* In a layer, so components can refine their focus style with utilities. */
 @layer base {
+  h1,
+  h2,
+  h3,
+  legend {
+    font-family: var(--font-display);
+    font-weight: 400;
+  }
+
   :focus-visible {
     outline: 2px solid var(--color-leaf);
     outline-offset: 2px;
+  }
+
+  /* Every hover and press across the site eases. A component's own transition utility still wins. */
+  a,
+  button,
+  tr,
+  input,
+  textarea,
+  [role="option"] {
+    transition: color 0.25s ease, background-color 0.25s ease, border-color 0.25s ease, opacity 0.25s ease;
   }
 }
 
@@ -65,9 +140,69 @@ body {
   background: var(--color-leaf-soft);
 }
 
+/*
+ * Scroll reveals. Elements stay visible unless the visitor allows motion. RevealObserver
+ * adds data-shown, and --i staggers neighbouring items.
+ */
+[data-reveal] {
+  transition:
+    opacity 0.9s cubic-bezier(0.2, 0.8, 0.2, 1),
+    translate 0.9s cubic-bezier(0.2, 0.8, 0.2, 1),
+    scale 1.2s cubic-bezier(0.2, 0.8, 0.2, 1),
+    filter 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition-delay: calc(var(--i, 0) * 90ms);
+}
+
+.map-line {
+  stroke-dasharray: 1;
+  transition: stroke-dashoffset 1.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition-delay: calc(var(--i, 0) * 70ms);
+}
+
+.map-fade {
+  transition: opacity 0.8s ease;
+  transition-delay: calc(var(--i, 0) * 70ms);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  [data-reveal]:not([data-shown]) {
+    opacity: 0;
+    translate: 0 18px;
+  }
+
+  [data-reveal="heading"]:not([data-shown]) {
+    filter: blur(8px);
+  }
+
+  [data-reveal="line"]:not([data-shown]) {
+    opacity: 1;
+    translate: none;
+    scale: 0 1;
+  }
+
+  [data-reveal="map"]:not([data-shown]) {
+    opacity: 1;
+    translate: none;
+  }
+
+  [data-reveal="map"]:not([data-shown]) .map-line {
+    stroke-dashoffset: 1;
+  }
+
+  [data-reveal="map"]:not([data-shown]) .map-fade {
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
     transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
   }
 }

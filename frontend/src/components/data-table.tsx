@@ -93,13 +93,13 @@ export function DataTable<T extends RowData>({
                       key={header.id}
                       scope="col"
                       aria-sort={dir === "asc" ? "ascending" : dir === "desc" ? "descending" : undefined}
-                      className={`whitespace-nowrap px-4 py-3 text-[13px] font-medium text-muted ${hide(header.column.id)}`}
+                      className={`whitespace-nowrap px-4 py-3 align-middle font-label text-[11px] font-normal tracking-[0.15em] text-ochre uppercase ${hide(header.column.id)}`}
                     >
                       {sortable ? (
                         <button
                           type="button"
                           onClick={header.column.getToggleSortingHandler()}
-                          className="inline-flex min-h-6 items-center gap-1 hover:text-ink"
+                          className="inline-flex min-h-6 items-center gap-1 tracking-[inherit] uppercase hover:text-ink"
                         >
                           <table.FlexRender header={header} />
                           {dir === "asc" ? (
