@@ -11,7 +11,7 @@ import type { EvidenceItem, Finding } from "@/lib/api/schemas";
 
 function CompoundCard({ c }: { c: Finding["compound_a"] }) {
   return (
-    <Link href={`/plants/${c.plant_id}?compound=${c.id}`} className="block rounded-lg border border-line bg-surface p-4 text-center hover:border-leaf">
+    <Link href={`/compounds/${c.id}`} className="block rounded-lg border border-line bg-surface p-4 text-center hover:border-leaf">
       <span className="block text-sm font-semibold">{c.name}</span>
       <Botanical className="text-[13px] text-muted">{c.botanical_name}</Botanical>
     </Link>
@@ -106,12 +106,11 @@ export function FindingDetailView() {
   return (
     <QueryView query={query}>
       {(f) => {
-        const back = { href: `/findings?analysis=${f.analysis_id}`, label: "Molecular findings" };
         const title = `${f.compound_a.name} and ${f.compound_b.name}`;
         if (!isTraceable(f)) {
           return (
             <>
-              <PageHeader back={back} title={title} />
+              <PageHeader title={title} />
               <Notice title="Finding withheld">At least one evidence item has no traceable source, so this finding is not displayed.</Notice>
             </>
           );
@@ -121,7 +120,6 @@ export function FindingDetailView() {
         return (
           <>
             <PageHeader
-              back={back}
               title={title}
               description={`Candidate relationship via ${f.target.symbol}. Rank ${f.rank}, score ${f.score}. The score orders candidates for investigation and does not measure efficacy.`}
             />

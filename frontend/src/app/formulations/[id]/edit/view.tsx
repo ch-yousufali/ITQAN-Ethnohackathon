@@ -13,7 +13,7 @@ export function EditFormulationView() {
     <QueryView query={query}>
       {(f) => (
         <>
-          <PageHeader back={{ href: `/formulations/${f.id}`, label: f.name }} title="Edit formulation" />
+          <PageHeader title="Edit formulation" />
           <FormulationForm key={f.updated_at} formulation={f} />
         </>
       )}

@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "New formulation" };
 export default function Page() {
   return (
     <>
-      <PageHeader back={{ href: "/formulations", label: "Formulations" }} title="New formulation" />
+      <PageHeader title="New formulation" />
       <FormulationForm />
     </>
   );

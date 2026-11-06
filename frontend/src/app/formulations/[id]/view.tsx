@@ -25,7 +25,6 @@ export function FormulationDetailView() {
         return (
           <>
             <PageHeader
-              back={{ href: "/formulations", label: "Formulations" }}
               title={f.name}
               description={f.description ?? undefined}
               actions={

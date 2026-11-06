@@ -3,8 +3,9 @@
 import { Menu, Sprout, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { Suspense, useState, type ReactNode } from "react";
 import { IS_DEMO } from "@/lib/api/http";
+import { BackButton } from "./back-button";
 
 const NAV = [
   { href: "/", label: "Overview" },
@@ -92,7 +93,13 @@ export function Shell({ children }: { children: ReactNode }) {
         </aside>
       )}
 
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-8 sm:py-12">{children}</main>
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-8 sm:py-12">
+        {/* Its own boundary, because reading the URL's query must not suspend the whole shell. */}
+        <Suspense fallback={null}>
+          <BackButton />
+        </Suspense>
+        {children}
+      </main>
 
       <footer className="border-t border-line">
         <div className="mx-auto max-w-7xl px-4 py-6 text-[13px] leading-relaxed text-muted sm:px-8">

@@ -174,7 +174,6 @@ export function ManuscriptReviewView() {
   const { id } = useParams<{ id: string }>();
   const query = useManuscript(id);
   const update = useUpdateManuscript(id);
-  const back = { href: "/manuscripts", label: "Manuscripts" };
 
   return (
     <QueryView query={query}>
@@ -182,7 +181,7 @@ export function ManuscriptReviewView() {
         if (m.status === "processing") {
           return (
             <>
-              <PageHeader back={back} title={m.filename} />
+              <PageHeader title={m.filename} />
               <Panel className="px-6 py-14 text-center" role="status">
                 <Loader2 className="mx-auto size-6 animate-spin text-leaf" aria-hidden />
                 <p className="mt-3 text-sm font-medium">Extracting text and identifying ingredients</p>
@@ -194,7 +193,7 @@ export function ManuscriptReviewView() {
         if (m.status === "failed") {
           return (
             <>
-              <PageHeader back={back} title={m.filename} />
+              <PageHeader title={m.filename} />
               <ErrorState title="Processing failed" error={new Error(m.error ?? "Processing failed for this manuscript.")} />
             </>
           );
@@ -215,7 +214,6 @@ export function ManuscriptReviewView() {
         return (
           <>
             <PageHeader
-              back={back}
               title={m.filename}
               description={confirmed ? "This manuscript has been reviewed." : "Check the extracted text, then verify each ingredient."}
               actions={

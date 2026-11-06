@@ -71,20 +71,13 @@ export function PageHeader({
   title,
   description,
   actions,
-  back,
 }: {
   title: ReactNode;
   description?: ReactNode;
   actions?: ReactNode;
-  back?: { href: string; label: string };
 }) {
   return (
     <div className="mb-8 sm:mb-10">
-      {back && (
-        <Link href={back.href} className="mb-4 inline-block text-sm text-muted hover:text-ink">
-          ← {back.label}
-        </Link>
-      )}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight text-balance sm:text-3xl">{title}</h1>

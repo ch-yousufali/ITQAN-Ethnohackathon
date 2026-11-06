@@ -258,7 +258,7 @@ function buildGraph(formulations: Formulation[]): Graph {
       nodes.set(p.id, { id: p.id, type: "plant", label: p.botanical_name, href: `/plants/${p.id}` });
       link(f.id, p.id, "contains", null, []);
       for (const c of COMPOUNDS.filter((x) => x.plant_ids.includes(p.id))) {
-        nodes.set(c.id, { id: c.id, type: "compound", label: c.name, href: `/plants/${p.id}?compound=${c.id}` });
+        nodes.set(c.id, { id: c.id, type: "compound", label: c.name, href: `/compounds/${c.id}` });
         link(p.id, c.id, "contains compound", null, c.references);
         for (const l of c.links) {
           const t = TARGETS.find((x) => x.id === l.target);

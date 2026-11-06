@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { DataTable, tableKit, type Columns } from "@/components/data-table";
-import { CoverageSummary, EVIDENCE_META, EvidenceBadge, Notice, isTraceable } from "@/components/evidence";
+import { CoverageSummary, EVIDENCE_META, EvidenceBadge, Notice, SourceList, isTraceable } from "@/components/evidence";
 import { EmptyState, ErrorState, QueryView } from "@/components/states";
 import { Select } from "@/components/select";
 import { Botanical, ButtonLink, PageHeader, Panel, Section, formatDate, formatPercent } from "@/components/ui";
@@ -56,6 +56,23 @@ const columns: Columns<Finding> = [
     cell: (c) => <span className="text-body tabular-nums">{formatPercent(c.getValue())}</span>,
   }),
 ];
+
+function EvidenceSummary({ finding }: { finding: Finding }) {
+  return (
+    <ul aria-label={`Evidence for ${finding.compound_a.name} and ${finding.compound_b.name}`} className="space-y-3 rounded-lg bg-paper p-3">
+      {finding.evidence.map((e) => (
+        <li key={e.id}>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <EvidenceBadge category={e.category} />
+            <span className="text-[13px] text-ink">{e.statement}</span>
+            {e.value && <span className="text-[13px] text-muted">{e.value}</span>}
+          </div>
+          <div className="mt-1"><SourceList sources={e.sources} /></div>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 function FindingsTable({ analysis }: { analysis: Analysis }) {
   const router = useRouter();
@@ -132,6 +149,7 @@ function FindingsTable({ analysis }: { analysis: Analysis }) {
               hideOnMobile={["rank", "category", "confidence"]}
               hideBelowDesktop={["pathways", "interaction_type"]}
               onRowClick={(f) => router.push(`/findings/${f.id}`)}
+              renderDetail={(f) => <EvidenceSummary finding={f} />}
             />
           )}
         </>
