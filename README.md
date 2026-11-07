@@ -91,8 +91,8 @@ That's not a treatment claim. That's a research proposal.
 ### 1. Clone
 
 ```bash
-git clone git@github.com:nazil561/Toji.git
-cd Toji
+git clone git@github.com:nazil561/ITQAN.git
+cd ITQAN
 ```
 
 ### 2. Configure environment
@@ -371,7 +371,7 @@ MIT — see [LICENSE](LICENSE) for details.
 
 <div align="center">
 
-**Itqan — إتقان**
+**ITQAN — إتقان**
 
 *We don't guess. We don't hope. We prove.*
 
