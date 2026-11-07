@@ -1,0 +1,120 @@
+import uuid
+
+from fastapi import APIRouter, HTTPException
+from sqlalchemy import select
+
+from app.api.deps import SessionDep
+from app.api.v1.adapters import finding_to_frontend
+from app.models.analysis import Finding
+from app.models.compound import Compound
+from app.models.plant import Plant
+from app.models.target import Target
+
+router = APIRouter(tags=["findings"])
+
+
+@router.get("/analyses/{run_id}/findings")
+async def list_findings_for_run(run_id: uuid.UUID, session: SessionDep):
+    rows = (await session.execute(
+        select(Finding).where(Finding.run_id == run_id).order_by(Finding.score.desc())
+    )).scalars().all()
+    return [await finding_to_frontend(session, f, rank=i + 1) for i, f in enumerate(rows)]
+
+
+@router.get("/findings/{finding_id}")
+async def get_finding(finding_id: uuid.UUID, session: SessionDep):
+    f = await session.get(Finding, finding_id)
+    if f is None:
+        raise HTTPException(status_code=404, detail="Finding not found")
+    return await finding_to_frontend(session, f, rank=1)
+
+
+def _shape_for_frontend(raw: dict) -> dict:
+    """Convert internal llm_interpretation JSON into the frontend's interpretation schema."""
+    summary_parts = []
+    if raw.get("plain_summary"):
+        summary_parts.append(raw["plain_summary"].strip())
+    if raw.get("mechanistic_hypothesis"):
+        summary_parts.append(raw["mechanistic_hypothesis"].strip())
+    return {
+        "summary": "\n\n".join(summary_parts),
+        "model": raw.get("model", "unknown"),
+        "generated_at": raw.get("generated_at", ""),
+        "caveats": raw.get("limitations", []) or [],
+    }
+
+
+@router.post("/findings/{finding_id}/interpretation")
+async def interpret_finding_endpoint(finding_id: uuid.UUID, session: SessionDep):
+    f = await session.get(Finding, finding_id)
+    if f is None:
+        raise HTTPException(status_code=404, detail="Finding not found")
+
+    # Cache hit — return existing interpretation
+    if f.llm_interpretation and isinstance(f.llm_interpretation, dict) and "error" not in f.llm_interpretation:
+        return _shape_for_frontend(f.llm_interpretation)
+
+    # Build evidence payload from DB rows
+    ca = await session.get(Compound, f.compound_a_id) if f.compound_a_id else None
+    cb = await session.get(Compound, f.compound_b_id) if f.compound_b_id else None
+    tg = await session.get(Target, f.target_id) if f.target_id else None
+
+    prov = f.provenance or {}
+    pa = None
+    pb = None
+    try:
+        if prov.get("plant_a_id"):
+            pa = await session.get(Plant, uuid.UUID(prov["plant_a_id"]))
+        if prov.get("plant_b_id"):
+            pb = await session.get(Plant, uuid.UUID(prov["plant_b_id"]))
+    except (ValueError, TypeError):
+        pass
+
+    payload = {
+        "formulation_hint": "cross-plant shared-target finding",
+        "plant_a": {"name": pa.canonical_name if pa else None, "family": pa.family if pa else None},
+        "plant_b": {"name": pb.canonical_name if pb else None, "family": pb.family if pb else None},
+        "compound_a": {
+            "name": ca.name if ca else None,
+            "inchikey": ca.inchikey if ca else None,
+            "pubchem_cid": ca.pubchem_cid if ca else None,
+        },
+        "compound_b": {
+            "name": cb.name if cb else None,
+            "inchikey": cb.inchikey if cb else None,
+            "pubchem_cid": cb.pubchem_cid if cb else None,
+        },
+        "target": {
+            "name": tg.name if tg else prov.get("target_name"),
+            "gene_symbol": tg.gene_symbol if tg else None,
+            "uniprot_id": tg.uniprot_id if tg else None,
+        },
+        "measured_activity_nM": {
+            "compound_a": prov.get("activity_a_nM"),
+            "compound_b": prov.get("activity_b_nM"),
+        },
+        "shared_target_count": prov.get("shared_target_count", 1),
+        "evidence_tier": str(f.evidence_tier),
+        "score": f.score,
+    }
+
+    try:
+        from app.llm.finding_interpreter import interpret_finding
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"LLM module unavailable: {exc}")
+
+    try:
+        interp = interpret_finding(payload)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"LLM call failed: {type(exc).__name__}: {str(exc)[:200]}")
+
+    if "error" in interp:
+        raise HTTPException(status_code=502, detail=f"LLM error: {interp.get('error')}")
+
+    f.llm_interpretation = interp
+    session.add(f)
+    await session.commit()
+
+    return _shape_for_frontend(interp)
