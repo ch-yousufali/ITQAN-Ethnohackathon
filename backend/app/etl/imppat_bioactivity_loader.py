@@ -164,7 +164,8 @@ class ImppatBioactivityLoader(BaseLoader):
                         CompoundTarget.__table__.update()
                         .where(CompoundTarget.id == existing[key])
                         .values(activity_type=activity_type, activity_value=activity_value,
-                                activity_unit=activity_unit)
+                                activity_unit=activity_unit,
+                                evidence_tier=EvidenceTier.MEASURED)
                     )
                     stats["edges_updated"] += 1
                 else:

@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.api.deps import SessionDep
-from app.api.v1.adapters import formulation_to_frontend
+from app.api.v1.adapters import formulation_to_frontend, formulations_to_frontend
 from app.models.enums import ResolutionStatus, Tradition
 from app.models.formulation import Formulation, FormulationIngredient
 
@@ -41,6 +41,9 @@ async def _get_loaded(session, formulation_id: uuid.UUID):
         select(Formulation)
         .where(Formulation.id == formulation_id)
         .options(selectinload(Formulation.ingredients))
+        # expire_on_commit=False keeps the pre-commit object in the identity map;
+        # without this, PUT returned the old ingredient list and updated_at.
+        .execution_options(populate_existing=True)
     )
     return result.scalar_one_or_none()
 
@@ -81,7 +84,7 @@ async def list_formulations(session: SessionDep):
         .order_by(Formulation.created_at.desc())
     )
     rows = result.scalars().unique().all()
-    return [await formulation_to_frontend(session, f) for f in rows]
+    return await formulations_to_frontend(session, list(rows))
 
 
 @router.get("/{formulation_id}")

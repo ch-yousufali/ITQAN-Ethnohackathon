@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:contract": "node --test --experimental-strip-types tests/contract.test.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^7.0.3",

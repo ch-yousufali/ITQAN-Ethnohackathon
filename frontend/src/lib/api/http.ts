@@ -5,6 +5,20 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? "";
 /** True only when explicitly enabled and no real backend is configured. */
 export const IS_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === "1" && !process.env.NEXT_PUBLIC_API_BASE_URL;
 
+/**
+ * Resolve a backend-provided URL for use in the browser. The API returns some
+ * links (e.g. manuscript previews) as root-relative paths, which would otherwise
+ * resolve against the frontend's origin instead of the API's.
+ */
+export function apiUrl(url: string): string {
+  if (!url.startsWith("/") || url.startsWith("//") || !BASE_URL) return url;
+  try {
+    return new URL(url, BASE_URL).toString();
+  } catch {
+    return url;
+  }
+}
+
 export class ApiError extends Error {
   constructor(
     message: string,

@@ -1,7 +1,8 @@
+import asyncio
 import uuid
 
 from fastapi import APIRouter, HTTPException
-from sqlalchemy import select
+from sqlalchemy import and_, func, or_, select
 
 from app.api.deps import SessionDep
 from app.api.v1.adapters import finding_to_frontend
@@ -16,7 +17,9 @@ router = APIRouter(tags=["findings"])
 @router.get("/analyses/{run_id}/findings")
 async def list_findings_for_run(run_id: uuid.UUID, session: SessionDep):
     rows = (await session.execute(
-        select(Finding).where(Finding.run_id == run_id).order_by(Finding.score.desc())
+        select(Finding).where(Finding.run_id == run_id)
+        # id breaks score ties so rank is stable and matches GET /findings/{id}.
+        .order_by(Finding.score.desc(), Finding.id)
     )).scalars().all()
     return [await finding_to_frontend(session, f, rank=i + 1) for i, f in enumerate(rows)]
 
@@ -26,7 +29,13 @@ async def get_finding(finding_id: uuid.UUID, session: SessionDep):
     f = await session.get(Finding, finding_id)
     if f is None:
         raise HTTPException(status_code=404, detail="Finding not found")
-    return await finding_to_frontend(session, f, rank=1)
+    ahead = (await session.execute(
+        select(func.count(Finding.id)).where(
+            Finding.run_id == f.run_id,
+            or_(Finding.score > f.score, and_(Finding.score == f.score, Finding.id < f.id)),
+        )
+    )).scalar() or 0
+    return await finding_to_frontend(session, f, rank=ahead + 1)
 
 
 def _shape_for_frontend(raw: dict) -> dict:
@@ -94,7 +103,7 @@ async def interpret_finding_endpoint(finding_id: uuid.UUID, session: SessionDep)
             "compound_b": prov.get("activity_b_nM"),
         },
         "shared_target_count": prov.get("shared_target_count", 1),
-        "evidence_tier": str(f.evidence_tier),
+        "evidence_tier": getattr(f.evidence_tier, "value", str(f.evidence_tier)),
         "score": f.score,
     }
 
@@ -104,7 +113,8 @@ async def interpret_finding_endpoint(finding_id: uuid.UUID, session: SessionDep)
         raise HTTPException(status_code=503, detail=f"LLM module unavailable: {exc}")
 
     try:
-        interp = interpret_finding(payload)
+        # Sync Groq client: run off the event loop so other requests are not blocked.
+        interp = await asyncio.to_thread(interpret_finding, payload)
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc))
     except Exception as exc:

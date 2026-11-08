@@ -44,3 +44,6 @@ next-env.d.ts
 !.env.example
 !.env.development
 !.env.production
+
+# video production assets
+/videoassests/

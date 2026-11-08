@@ -166,6 +166,21 @@ npm run dev
 
 Open **http://localhost:3000**.
 
+### 7. Run the tests (optional)
+
+With the backend running, data loaded and at least one analysis completed:
+
+```bash
+# Backend integration tests (run inside the API container; they clean up after themselves)
+cd backend
+docker compose exec api pip install pytest
+docker compose exec api pytest -q
+
+# Frontend contract test: checks every API response against the app's Zod schemas
+cd ../frontend
+npm run test:contract
+```
+
 ---
 
 ## Architecture
@@ -274,6 +289,7 @@ Docker Compose · GitHub · *(planned)* Neon + Render — **$0 monthly cost**
 | `GET` | `/api/v1/manuscripts/{id}` | Manuscript with OCR + ingredients |
 | `PATCH` | `/api/v1/manuscripts/{id}` | Correct OCR text / ingredients |
 | `POST` | `/api/v1/manuscripts/{id}/confirm` | Create formulation from manuscript |
+| `GET` | `/api/v1/graph?analysis_id=` | Knowledge graph (one run, or all formulations) |
 
 Full OpenAPI docs available at `http://localhost:8000/docs` when the backend is running.
 

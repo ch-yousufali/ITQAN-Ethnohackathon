@@ -1,3 +1,4 @@
+import logging
 import uuid
 from pathlib import Path
 
@@ -15,7 +16,11 @@ from app.models.enums import ResolutionStatus, Tradition
 from app.models.formulation import Formulation, FormulationIngredient
 from app.models.manuscript import Manuscript, ManuscriptIngredient
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/manuscripts", tags=["manuscripts"])
+
+VALID_ING_STATUSES = {"confirmed", "corrected", "uncertain", "unmapped"}
 
 MANUSCRIPTS_DIR = Path("/code/data/manuscripts")
 MANUSCRIPTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -78,6 +83,7 @@ def _ms_to_frontend(m: Manuscript) -> dict:
 async def _get_ms(session, mid: uuid.UUID) -> Manuscript | None:
     result = await session.execute(
         select(Manuscript).where(Manuscript.id == mid).options(selectinload(Manuscript.ingredients))
+        .execution_options(populate_existing=True)
     )
     return result.scalar_one_or_none()
 
@@ -135,8 +141,16 @@ async def _process_ocr(manuscript_id: uuid.UUID) -> None:
                     idx += 1
             await session.commit()
         except Exception as exc:
+            # A failed flush leaves the session unusable; without the rollback this
+            # commit raised too and the manuscript stayed "processing" forever,
+            # so the UI kept polling.
+            logger.exception("OCR processing failed for manuscript %s", manuscript_id)
+            await session.rollback()
+            m = await _get_ms(session, manuscript_id)
+            if m is None:
+                return
             m.status = "failed"
-            m.error = f"{type(exc).__name__}: {exc}"
+            m.error = f"{type(exc).__name__}: {str(exc)[:500]}"
             await session.commit()
 
 
@@ -210,13 +224,21 @@ async def patch_manuscript(manuscript_id: uuid.UUID, payload: ManuscriptPatch, s
                 pid = patch["plant_id"]
                 if pid:
                     from app.models.plant import Plant
-                    plant = await session.get(Plant, uuid.UUID(pid))
-                    ing.plant_id = plant.id if plant else None
+                    try:
+                        plant_uuid = uuid.UUID(str(pid))
+                    except ValueError:
+                        raise HTTPException(422, f"Invalid plant_id: {pid}")
+                    plant = await session.get(Plant, plant_uuid)
+                    if plant is None:
+                        raise HTTPException(422, "Selected plant does not exist")
+                    ing.plant_id = plant.id
                     ing.botanical_name = plant.canonical_name if plant else None
                 else:
                     ing.plant_id = None
                     ing.botanical_name = None
             if "status" in patch:
+                if patch["status"] not in VALID_ING_STATUSES:
+                    raise HTTPException(422, f"Invalid status: {patch['status']}")
                 ing.status = patch["status"]
             if "traditional_name" in patch:
                 ing.traditional_name = patch["traditional_name"]
@@ -232,7 +254,15 @@ async def confirm_manuscript(manuscript_id: uuid.UUID, payload: ConfirmInput, se
     if not m:
         raise HTTPException(404, "Manuscript not found")
     if m.status == "confirmed" and m.formulation_id:
-        raise HTTPException(400, "Already confirmed")
+        raise HTTPException(409, "This manuscript has already been confirmed.")
+    if m.status != "review":
+        raise HTTPException(409, "The manuscript is not ready for confirmation yet.")
+    uncertain = [i.traditional_name for i in m.ingredients if i.status == "uncertain"]
+    if uncertain:
+        # API contract: reject confirmation while uncertain identifications remain.
+        raise HTTPException(
+            409, f"Resolve the uncertain ingredients first: {', '.join(uncertain[:5])}"
+        )
 
     formulation = Formulation(
         name=payload.name,

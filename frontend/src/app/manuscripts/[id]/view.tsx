@@ -13,11 +13,13 @@ import { ErrorState, QueryView } from "@/components/states";
 import { Botanical, Button, ButtonLink, Field, Input, PageHeader, Panel, Section, Textarea, formatPercent } from "@/components/ui";
 import { Select } from "@/components/select";
 import { useConfirmManuscript, useManuscript, usePlants, useUpdateManuscript } from "@/lib/api";
+import { apiUrl } from "@/lib/api/http";
 import type { IdentifiedIngredient, Manuscript } from "@/lib/api/schemas";
 
 function Preview({ manuscript }: { manuscript: Manuscript }) {
   const [broken, setBroken] = useState(false);
-  const { preview_url: url, content_type: type, filename } = manuscript;
+  const { preview_url: rawUrl, content_type: type, filename } = manuscript;
+  const url = rawUrl ? apiUrl(rawUrl) : null;
   if (!url || broken) {
     return <p className="p-6 text-center text-sm text-muted">Preview not available for this file.</p>;
   }

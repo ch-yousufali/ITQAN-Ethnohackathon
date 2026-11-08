@@ -153,7 +153,9 @@ class ImppatTargetsLoader(BaseLoader):
                 "target_id": target_uuid,
                 "source": "IMPPAT_Targets",
                 "confidence": 1.0,
-                "evidence_tier": EvidenceTier.MEASURED,
+                # Curated DB association with no assay value; the bioactivity
+                # loader upgrades it to MEASURED when it attaches a value.
+                "evidence_tier": EvidenceTier.CURATED,
             })
             if len(edge_batch) >= BATCH_SIZE:
                 for row in edge_batch:

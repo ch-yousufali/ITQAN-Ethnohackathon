@@ -26,7 +26,16 @@ def _v(x) -> str:
 async def formulation_to_frontend(
     session: AsyncSession, formulation: Formulation
 ) -> dict[str, Any]:
-    plant_ids = [i.plant_id for i in formulation.ingredients if i.plant_id]
+    return (await formulations_to_frontend(session, [formulation]))[0]
+
+
+async def formulations_to_frontend(
+    session: AsyncSession, formulations: list[Formulation]
+) -> list[dict[str, Any]]:
+    """Bulk version: two queries total instead of one per formulation."""
+    from app.models.manuscript import Manuscript
+
+    plant_ids = {i.plant_id for f in formulations for i in f.ingredients if i.plant_id}
     plant_map: dict[uuid.UUID, str] = {}
     if plant_ids:
         rows = await session.execute(
@@ -34,6 +43,23 @@ async def formulation_to_frontend(
         )
         plant_map = {row.id: row.canonical_name for row in rows}
 
+    manuscript_map: dict[uuid.UUID, uuid.UUID] = {}
+    f_ids = [f.id for f in formulations]
+    if f_ids:
+        rows = await session.execute(
+            select(Manuscript.formulation_id, Manuscript.id)
+            .where(Manuscript.formulation_id.in_(f_ids))
+        )
+        manuscript_map = {fid: mid for fid, mid in rows.all()}
+
+    return [_formulation_dict(f, plant_map, manuscript_map) for f in formulations]
+
+
+def _formulation_dict(
+    formulation: Formulation,
+    plant_map: dict[uuid.UUID, str],
+    manuscript_map: dict[uuid.UUID, uuid.UUID],
+) -> dict[str, Any]:
     ingredients = []
     for ing in formulation.ingredients:
         botanical_name = (
@@ -56,7 +82,9 @@ async def formulation_to_frontend(
         "period": formulation.era or "",
         "description": formulation.notes,
         "source_note": formulation.source_text,
-        "manuscript_id": None,
+        "manuscript_id": (
+            str(manuscript_map[formulation.id]) if formulation.id in manuscript_map else None
+        ),
         "ingredients": ingredients,
         "updated_at": (
             formulation.updated_at.isoformat()
@@ -67,67 +95,88 @@ async def formulation_to_frontend(
 
 
 async def plant_to_frontend(session, plant) -> dict[str, Any]:
-    from sqlalchemy import func
+    return (await plants_to_frontend(session, [plant]))[0]
+
+
+async def plants_to_frontend(session, plants: list) -> list[dict[str, Any]]:
+    """Bulk version: a fixed number of queries regardless of how many plants.
+
+    plant_compounds holds one row per (plant, compound, part), so compounds are
+    de-duplicated here; otherwise a compound found in three parts is listed three times.
+    """
+    from collections import defaultdict
+
+    from sqlalchemy import func, true
     from app.models.compound import Compound, PlantCompound
     from app.models.plant import PlantAlias
+    from app.models.target import CompoundTarget
 
-    alias_rows = (await session.execute(
-        select(PlantAlias).where(PlantAlias.plant_id == plant.id)
-    )).scalars().all()
-    common_names = [a.alias for a in alias_rows if a.language in ("en", None)]
-    traditional_names = [a.alias for a in alias_rows if a.language == "sa"]
+    if not plants:
+        return []
+    ids = [p.id for p in plants]
+    # Very large IN lists are slower than scanning; for a full listing, skip the filter.
+    filt = (lambda col: col.in_(ids)) if len(ids) <= 1000 else (lambda col: true())
 
-    part_rows = (await session.execute(
-        select(PlantCompound.plant_part).where(PlantCompound.plant_id == plant.id).distinct()
-    )).all()
-    parts_used = [p[0] for p in part_rows if p[0]]
+    common: dict = defaultdict(list)
+    traditional: dict = defaultdict(list)
+    for pid, alias, lang in (await session.execute(
+        select(PlantAlias.plant_id, PlantAlias.alias, PlantAlias.language)
+        .where(filt(PlantAlias.plant_id))
+    )).all():
+        if lang in ("en", None):
+            common[pid].append(alias)
+        elif lang == "sa":
+            traditional[pid].append(alias)
 
-    compound_rows = (await session.execute(
-        select(Compound.id, Compound.name, Compound.molecular_formula)
-        .join(PlantCompound, PlantCompound.compound_id == Compound.id)
-        .where(PlantCompound.plant_id == plant.id)
-        .order_by(Compound.name)
-    )).all()
+    parts: dict = defaultdict(list)
+    for pid, part in (await session.execute(
+        select(PlantCompound.plant_id, PlantCompound.plant_part)
+        .where(filt(PlantCompound.plant_id), PlantCompound.plant_part.isnot(None))
+        .distinct()
+        .order_by(PlantCompound.plant_id, PlantCompound.plant_part)
+    )).all():
+        parts[pid].append(part)
 
-    compound_ids = [row[0] for row in compound_rows]
-    target_counts: dict[uuid.UUID, int] = {}
-    if compound_ids:
-        from app.models.target import CompoundTarget
-        tcount_rows = (await session.execute(
-            select(CompoundTarget.compound_id, func.count(CompoundTarget.target_id))
-            .where(CompoundTarget.compound_id.in_(compound_ids))
-            .group_by(CompoundTarget.compound_id)
-        )).all()
-        target_counts = {row[0]: row[1] for row in tcount_rows}
+    target_counts = (
+        select(CompoundTarget.compound_id, func.count(func.distinct(CompoundTarget.target_id)).label("n"))
+        .group_by(CompoundTarget.compound_id)
+        .subquery()
+    )
+    compounds: dict = defaultdict(list)
+    for pid, cid, cname, formula, n in (await session.execute(
+        select(PlantCompound.plant_id, Compound.id, Compound.name,
+               Compound.molecular_formula, func.coalesce(target_counts.c.n, 0))
+        .join(Compound, Compound.id == PlantCompound.compound_id)
+        .outerjoin(target_counts, target_counts.c.compound_id == Compound.id)
+        .where(filt(PlantCompound.plant_id))
+        .distinct()
+        .order_by(PlantCompound.plant_id, Compound.name, Compound.id)
+    )).all():
+        compounds[pid].append({
+            "id": str(cid), "name": cname, "formula": formula, "target_count": int(n),
+        })
 
-    compounds_list = [
+    return [
         {
-            "id": str(cid),
-            "name": cname,
-            "formula": formula,
-            "target_count": target_counts.get(cid, 0),
+            "id": str(plant.id),
+            "botanical_name": plant.canonical_name,
+            "family": plant.family,
+            "common_names": common.get(plant.id, []),
+            "traditional_names": traditional.get(plant.id, []),
+            "parts_used": parts.get(plant.id, []),
+            "description": None,
+            "references": [{
+                "id": f"imppat:{plant.imppat_id or plant.id}",
+                "database": "IMPPAT_3.0",
+                "accession": plant.imppat_id or str(plant.id)[:8],
+                "title": None,
+                "year": None,
+                "url": "https://cb.imsc.res.in/imppat/",
+            }],
+            "compounds": compounds.get(plant.id, []),
         }
-        for cid, cname, formula in compound_rows
+        for plant in plants
     ]
-
-    return {
-        "id": str(plant.id),
-        "botanical_name": plant.canonical_name,
-        "family": plant.family,
-        "common_names": common_names,
-        "traditional_names": traditional_names,
-        "parts_used": parts_used,
-        "description": None,
-        "references": [{
-            "id": f"imppat:{plant.imppat_id or plant.id}",
-            "database": "IMPPAT_3.0",
-            "accession": plant.imppat_id or str(plant.id)[:8],
-            "title": None,
-            "year": None,
-            "url": "https://cb.imsc.res.in/imppat/",
-        }],
-        "compounds": compounds_list,
-    }
 
 
 async def compound_to_frontend(session, compound) -> dict[str, Any]:
@@ -214,30 +263,39 @@ async def analysis_to_frontend(session, run) -> dict[str, Any]:
     )).scalar() or 0
 
     params = run.params or {}
-    ratio = float(params.get("coverage", 0.0))
-    warnings: list[str] = []
-    if ratio < 0.5:
-        warnings.append(f"Only {round(ratio * 100)}% of ingredients had molecular target data.")
-    if int(params.get("resolved_plants", 0)) == 0:
-        warnings.append("No ingredients could be resolved to a botanical species.")
+    status = _ANALYSIS_STATUS_MAP.get(_v(run.status).upper(), "queued")
+    coverage = None
+    # Coverage only exists once the engine has run; reporting it for queued runs
+    # showed a misleading "Only 0% of ingredients had molecular target data".
+    if status == "completed":
+        ratio = min(max(float(params.get("coverage", 0.0)), 0.0), 1.0)
+        warnings: list[str] = list(params.get("warnings") or [])
+        resolved = int(params.get("resolved_plants", mapped))
+        if resolved == 0:
+            warnings.append("No ingredients could be resolved to a botanical species.")
+        elif ratio < 0.5:
+            warnings.append(f"Only {round(ratio * 100)}% of matched plants had molecular target data.")
+        if total > mapped:
+            warnings.append(f"{total - mapped} of {total} ingredients are not matched to a plant.")
+        coverage = {
+            "ingredients_total": total,
+            "ingredients_mapped": mapped,
+            "plants_with_compounds": int(params.get("plants_with_targets", 0)),
+            "compounds_total": int(params.get("compounds_total", 0)),
+            "compounds_with_targets": int(params.get("compounds_with_targets", 0)),
+            "ratio": ratio,
+            "warnings": warnings,
+        }
 
     return {
         "id": str(run.id),
         "formulation_id": str(run.formulation_id),
         "formulation_name": formulation_name,
-        "status": _ANALYSIS_STATUS_MAP.get(_v(run.status).upper(), "queued"),
+        "status": status,
         "error": run.error,
         "started_at": run.created_at.isoformat(),
         "completed_at": run.finished_at.isoformat() if run.finished_at else None,
-        "coverage": {
-            "ingredients_total": total,
-            "ingredients_mapped": mapped,
-            "plants_with_compounds": int(params.get("plants_with_targets", 0)),
-            "compounds_total": 0,
-            "compounds_with_targets": 0,
-            "ratio": ratio,
-            "warnings": warnings,
-        },
+        "coverage": coverage,
         "findings_count": findings_count,
     }
 

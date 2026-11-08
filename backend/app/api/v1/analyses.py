@@ -1,3 +1,4 @@
+import logging
 import uuid
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException
@@ -11,6 +12,8 @@ from app.models.analysis import AnalysisRun
 from app.models.enums import AnalysisStatus
 from app.models.formulation import Formulation
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(tags=["analyses"])
 
 
@@ -19,7 +22,8 @@ async def _run_analysis_bg(run_id: uuid.UUID) -> None:
         try:
             await analyze_formulation(session, run_id)
         except Exception:
-            pass
+            # The engine already marked the run FAILED; log so the cause isn't lost.
+            logger.exception("Analysis run %s failed", run_id)
 
 
 async def _trigger(formulation_id: uuid.UUID, session, background: BackgroundTasks):

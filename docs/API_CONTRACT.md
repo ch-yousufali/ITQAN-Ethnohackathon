@@ -136,7 +136,7 @@ type Graph = {
   nodes: {
     id: string; type: "formulation" | "plant" | "compound" | "target" | "pathway";
     label: string;
-    href: string | null; // in-app route, e.g. "/plants/p1"
+    href: string | null; // in-app route, e.g. "/plants/p1" or "/compounds/c1"
   }[];
   links: {
     id: string; source: string; target: string; relation: string;

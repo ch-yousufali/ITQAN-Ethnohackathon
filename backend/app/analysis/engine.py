@@ -43,15 +43,28 @@ async def analyze_formulation(
         )).scalars().all()
         plant_ids = {ing.plant_id for ing in ingredients if ing.plant_id}
 
-        target_name_rows = await session.execute(select(CompoundTarget.__table__).limit(0))
         from app.models.target import Target as TargetModel
         tnames = await session.execute(select(TargetModel.id, TargetModel.name))
         target_names = {tid: name for tid, name in tnames.all()}
 
         if len(plant_ids) < 2:
+            # Nothing to compare. Record real coverage numbers so the UI explains
+            # why there are no findings instead of reporting "0% coverage".
             run.status = AnalysisStatus.COMPLETED
             run.finished_at = datetime.now(timezone.utc)
-            run.params = {**run.params, "error": "fewer than 2 plants resolved"}
+            run.params = {
+                **(run.params or {}),
+                "resolved_plants": len(plant_ids),
+                "plants_with_targets": 0,
+                "compounds_total": 0,
+                "compounds_with_targets": 0,
+                "coverage": 0.0,
+                "findings_written": 0,
+                "warnings": [
+                    f"Only {len(plant_ids)} ingredient(s) could be matched to a plant; "
+                    "at least 2 are needed to look for shared targets."
+                ],
+            }
             await session.commit()
             return {"findings": 0, "reason": "insufficient_plants"}
 
@@ -158,7 +171,13 @@ async def analyze_formulation(
                 compound_a_id=fd["compound_a"],
                 compound_b_id=fd["compound_b"],
                 target_id=fd["target_id"],
-                evidence_tier=EvidenceTier.MEASURED,
+                # MEASURED only when both sides carry an assay value; a bare
+                # database-curated target link (ChEMBL/NPASS/BindingDB) is CURATED.
+                evidence_tier=(
+                    EvidenceTier.MEASURED
+                    if fd["act_a"] is not None and fd["act_b"] is not None
+                    else EvidenceTier.CURATED
+                ),
                 provenance={
                     "plant_a_id": str(fd["plant_a"]),
                     "plant_b_id": str(fd["plant_b"]),
@@ -173,8 +192,10 @@ async def analyze_formulation(
         run.status = AnalysisStatus.COMPLETED
         run.finished_at = datetime.now(timezone.utc)
         run.params = {
-            **run.params,
+            **(run.params or {}),
             "resolved_plants": len(plant_ids),
+            "compounds_total": len(all_compound_ids),
+            "compounds_with_targets": sum(1 for c in all_compound_ids if compound_to_targets.get(c)),
             "plants_with_targets": len(plants_with_targets),
             "coverage": round(coverage, 3),
             "candidate_targets": len(target_binders),
